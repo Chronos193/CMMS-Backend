@@ -3,21 +3,61 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 import requests
 
+from .models import Hall, Notification
 from .serializers import (
     SignupSerializer, 
     LoginSerializer, 
     ResetPasswordEmailSerializer, 
-    ResetPasswordSerializer
+    ResetPasswordSerializer,
+    HallSerializer,
+    UserProfileSerializer,
+    NotificationSerializer
 )
 
 User = get_user_model()
+
+class HallListView(APIView):
+    """
+    API View to return a list of all halls.
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        halls = Hall.objects.all()
+        serializer = HallSerializer(halls, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
+    """
+    API View to return the authenticated user's profile.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NotificationListView(APIView):
+    """
+    API View to return notifications for the authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user).order_by('-time')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class SignupView(APIView):
     """

@@ -4,14 +4,33 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import AuthenticationFailed
 
+from .models import Hall, Notification
+
 User = get_user_model()
+
+class HallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hall
+        fields = ['id', 'name']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    hall_name = serializers.CharField(source='hall_of_residence.name', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'roll_no', 'hall_of_residence', 'hall_name', 'room_no', 'contact_no', 'role']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'content', 'category', 'time']
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
-        fields = ['name', 'roll_no', 'email', 'hall_of_residence', 'password']
+        fields = ['name', 'roll_no', 'email', 'hall_of_residence', 'room_no', 'contact_no', 'role', 'password']
 
     def validate_email(self, value):
         """Validates that the provided email ends with the designated @iitk.ac.in domain."""
@@ -26,8 +45,11 @@ class SignupSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             email=validated_data['email'],
             name=validated_data['name'],
-            roll_no=validated_data['roll_no'],
-            hall_of_residence=validated_data['hall_of_residence'],
+            roll_no=validated_data.get('roll_no', ''),
+            hall_of_residence=validated_data.get('hall_of_residence', ''),
+            room_no=validated_data.get('room_no', ''),
+            contact_no=validated_data.get('contact_no', ''),
+            role=validated_data.get('role', 'student'),
             password=validated_data['password']
         )
         return user
@@ -66,7 +88,7 @@ class LoginSerializer(serializers.Serializer):
                 'email': user.email,
                 'name': user.name,
                 'roll_no': user.roll_no,
-                'hall_of_residence': user.hall_of_residence,
+                'hall_of_residence': user.hall_of_residence.name if user.hall_of_residence else '',
                 'role': user.role
             }
         }

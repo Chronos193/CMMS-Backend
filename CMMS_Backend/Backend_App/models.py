@@ -47,7 +47,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
     # Made these blank=True so Admin accounts don't require student-specific fields
     roll_no = models.CharField(max_length=50, blank=True, default='')
-    hall_of_residence = models.CharField(max_length=100, blank=True, default='')
+    hall_of_residence = models.ForeignKey('Hall', on_delete=models.SET_NULL, null=True, blank=True, related_name='residents')
     room_no = models.CharField(max_length=20, blank=True, default='')
     contact_no = models.CharField(max_length=15, blank=True, default='')
     
@@ -212,3 +212,24 @@ class MessBill(models.Model):
 
     def __str__(self):
         return f"MessBill - {self.user.email} / {self.month}"
+
+class Notification(models.Model):
+    CATEGORY_CHOICES = [
+        ('seen', 'Seen'),
+        ('unseen', 'Unseen'),
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+
+    category = models.CharField(
+        max_length=10,
+        choices=CATEGORY_CHOICES,
+        default='unseen'
+    )
+
+    time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.user.name}"
