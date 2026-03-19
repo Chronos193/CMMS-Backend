@@ -10,7 +10,8 @@ from .views import (
     NotificationListView,
     MarkNotificationsSeenView,
     MenuListView,
-    AuthStatusView
+    AuthStatusView,
+    FeedbackListView
 )
 
 urlpatterns = [
@@ -20,6 +21,7 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='profile'),
     path('notifications/', NotificationListView.as_view(), name='notifications'),
     path('notifications/mark-seen/', MarkNotificationsSeenView.as_view(), name='mark-notifications-seen'),
+    path('feedbacks/', FeedbackListView.as_view(), name='feedbacks'),
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

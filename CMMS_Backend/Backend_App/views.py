@@ -10,7 +10,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 import requests
 
-from .models import Hall, Notification, Menu
+from .models import Hall, Notification, Menu, Feedback
 from .serializers import (
     SignupSerializer, 
     LoginSerializer, 
@@ -19,7 +19,8 @@ from .serializers import (
     HallSerializer,
     UserProfileSerializer,
     NotificationSerializer,
-    MenuSerializer
+    MenuSerializer,
+    FeedbackSerializer
 )
 
 User = get_user_model()
@@ -112,6 +113,29 @@ class MarkNotificationsSeenView(APIView):
     def post(self, request):
         updated_count = Notification.objects.filter(user=request.user, category='unseen').update(category='seen')
         return Response({"message": f"{updated_count} notifications marked as seen."}, status=status.HTTP_200_OK)
+
+
+class FeedbackListView(APIView):
+    """
+    API View to list and create feedbacks.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if getattr(request.user, 'role', '') == 'admin':
+            feedbacks = Feedback.objects.all().order_by('-date', '-id')
+        else:
+            feedbacks = Feedback.objects.filter(user=request.user).order_by('-date', '-id')
+        
+        serializer = FeedbackSerializer(feedbacks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = FeedbackSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SignupView(APIView):
